@@ -32,12 +32,25 @@ void drawRectangle(int r1, int c1, int r2, int c2)
         }
     }
 }
-
+void drawLine(int r1, int c1, int r2, int c2)
+{
+    if(r1 == r2)   // Horizontal line
+    {
+        for(int j = c1; j <= c2; j++)
+            canvas[r1][j] = '*';
+    }
+    else if(c1 == c2)   // Vertical line
+    {
+        for(int i = r1; i <= r2; i++)
+            canvas[i][c1] = '*';
+    }
+}
 void menu()
 {
     printf("\n--- 2D Graphics Editor ---\n");
     printf("1. Display Canvas\n");
     printf("2. Draw Rectangle\n");
+    printf("3. Draw Line\n");
     printf("0. Exit\n");
 }
 
@@ -68,6 +81,18 @@ void runMenu()
                 printf("Rectangle drawn!\n");
                 break;
             }
+            case 3:
+{
+    int r1, c1, r2, c2;
+
+    printf("Line (row1 col1 row2 col2): ");
+    scanf("%d %d %d %d", &r1, &c1, &r2, &c2);
+
+    drawLine(r1, c1, r2, c2);
+
+    printf("Line drawn!\n");
+    break;
+}
 
             case 0:
                 printf("Exiting program...\n");
