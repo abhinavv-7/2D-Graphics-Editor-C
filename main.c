@@ -15,33 +15,34 @@ int count = 0;
 
 char canvas[ROWS][COLS];
 
-// ---------------- CANVAS ----------------
 void createCanvas()
 {
-    for(int i = 0; i < ROWS; i++)
-        for(int j = 0; j < COLS; j++)
+    int i, j;
+    for(i = 0; i < ROWS; i++)
+        for(j = 0; j < COLS; j++)
             canvas[i][j] = '_';
 }
 
 void displayCanvas()
 {
-    for(int i = 0; i < ROWS; i++)
+    int i, j;
+    for(i = 0; i < ROWS; i++)
     {
-        for(int j = 0; j < COLS; j++)
+        for(j = 0; j < COLS; j++)
             printf("%c", canvas[i][j]);
         printf("\n");
     }
 }
 
-// ---------------- DRAW LINE ----------------
-// x = col, y = row
 void drawLine(int ax1, int ay1, int ax2, int ay2)
 {
     int dx = ax2 - ax1;
     int dy = ay2 - ay1;
-
     int steps = abs(dx);
+    int i, r, c;
+
     if(abs(dy) > steps) steps = abs(dy);
+
     if(steps == 0)
     {
         if(ay1 >= 0 && ay1 < ROWS && ax1 >= 0 && ax1 < COLS)
@@ -49,27 +50,25 @@ void drawLine(int ax1, int ay1, int ax2, int ay2)
         return;
     }
 
-    for(int i = 0; i <= steps; i++)
+    for(i = 0; i <= steps; i++)
     {
-        int c = ax1 + (dx * i) / steps;
-        int r = ay1 + (dy * i) / steps;
-
+        c = ax1 + (dx * i) / steps;
+        r = ay1 + (dy * i) / steps;
         if(r >= 0 && r < ROWS && c >= 0 && c < COLS)
             canvas[r][c] = '*';
     }
 }
 
-// ---------------- DRAW RECTANGLE ----------------
 void drawRectangle(int ax1, int ay1, int ax2, int ay2)
 {
-    for(int r = ay1; r <= ay2; r++)
-        for(int c = ax1; c <= ax2; c++)
+    int r, c;
+    for(r = ay1; r <= ay2; r++)
+        for(c = ax1; c <= ax2; c++)
             if(r >= 0 && r < ROWS && c >= 0 && c < COLS)
                 if(r == ay1 || r == ay2 || c == ax1 || c == ax2)
                     canvas[r][c] = '*';
 }
 
-// ---------------- DRAW TRIANGLE ----------------
 void drawTriangle(int ax1, int ay1, int ax2, int ay2, int ax3, int ay3)
 {
     drawLine(ax1, ay1, ax2, ay2);
@@ -77,29 +76,28 @@ void drawTriangle(int ax1, int ay1, int ax2, int ay2, int ax3, int ay3)
     drawLine(ax3, ay3, ax1, ay1);
 }
 
-// ---------------- DRAW CIRCLE (OUTLINE) ----------------
 void drawCircle(int cx, int cy, int radius)
 {
-    for(int r = 0; r < ROWS; r++)
+    int r, c;
+    double ddx, ddy, dist;
+    for(r = 0; r < ROWS; r++)
     {
-        for(int c = 0; c < COLS; c++)
+        for(c = 0; c < COLS; c++)
         {
-            double dx = (c - cx) * 0.5;
-            double dy = (r - cy);
-            double dist = sqrt(dx*dx + dy*dy);
-
+            ddx = (c - cx) * 0.5;
+            ddy = (double)(r - cy);
+            dist = sqrt(ddx*ddx + ddy*ddy);
             if(fabs(dist - radius) < 0.6)
                 canvas[r][c] = '*';
-
+        }
     }
 }
 
-// ---------------- RENDER ----------------
 void render()
 {
+    int i;
     createCanvas();
-
-    for(int i = 0; i < count; i++)
+    for(i = 0; i < count; i++)
     {
         if(shapeType[i] == 1)
             drawLine(px1[i], py1[i], px2[i], py2[i]);
@@ -112,7 +110,6 @@ void render()
     }
 }
 
-// ---------------- MENU ----------------
 void menu()
 {
     printf("\n2D Graphics Editor\n");
@@ -126,10 +123,9 @@ void menu()
     printf("Enter choice: \n");
 }
 
-// ---------------- MAIN LOOP ----------------
 void runMenu()
 {
-    int choice;
+    int choice, t, idx, i;
 
     do
     {
@@ -137,108 +133,104 @@ void runMenu()
         fflush(stdout);
         scanf("%d", &choice);
 
-        switch(choice)
+        if(choice == 1)
         {
-            case 1:
+            printf("Choose shape type:\n");
+            printf("1. Line\n");
+            printf("2. Rectangle\n");
+            printf("3. Circle\n");
+            printf("4. Triangle\n");
+            printf("Enter shape type: ");
+            fflush(stdout);
+            scanf("%d", &t);
+
+            shapeType[count] = t;
+
+            if(t == 1)
             {
-                int t;
-                printf("Choose shape type:\n");
-                printf("1. Line\n");
-                printf("2. Rectangle\n");
-                printf("3. Circle\n");
-                printf("4. Triangle\n");
-                printf("Enter shape type: ");
+                printf("Enter x1 y1 x2 y2: ");
                 fflush(stdout);
-                scanf("%d", &t);
-
-                shapeType[count] = t;
-
-                if(t == 1)
-                {
-                    printf("Enter x1 y1 x2 y2: ");
-                    fflush(stdout);
-                    scanf("%d %d %d %d",
-                          &px1[count], &py1[count],
-                          &px2[count], &py2[count]);
-                }
-                else if(t == 2)
-                {
-                    printf("Enter top-left x y and bottom-right x y: ");
-                    fflush(stdout);
-                    scanf("%d %d %d %d",
-                          &px1[count], &py1[count],
-                          &px2[count], &py2[count]);
-                }
-                else if(t == 3)
-                {
-                    printf("Enter center x y and radius: ");
-                    fflush(stdout);
-                    scanf("%d %d %d",
-                          &px1[count], &py1[count], &px2[count]);
-                }
-                else if(t == 4)
-                {
-                    printf("Enter x1 y1 x2 y2 x3 y3: ");
-                    fflush(stdout);
-                    scanf("%d %d %d %d %d %d",
-                          &px1[count], &py1[count],
-                          &px2[count], &py2[count],
-                          &px3[count], &py3[count]);
-                }
-
-                printf("Object added with index %d.\n", count);
-                count++;
-                render();
-                break;
+                scanf("%d %d %d %d",
+                      &px1[count], &py1[count],
+                      &px2[count], &py2[count]);
+            }
+            else if(t == 2)
+            {
+                printf("Enter top-left x y and bottom-right x y: ");
+                fflush(stdout);
+                scanf("%d %d %d %d",
+                      &px1[count], &py1[count],
+                      &px2[count], &py2[count]);
+            }
+            else if(t == 3)
+            {
+                printf("Enter center x y and radius: ");
+                fflush(stdout);
+                scanf("%d %d %d",
+                      &px1[count], &py1[count], &px2[count]);
+            }
+            else if(t == 4)
+            {
+                printf("Enter x1 y1 x2 y2 x3 y3: ");
+                fflush(stdout);
+                scanf("%d %d %d %d %d %d",
+                      &px1[count], &py1[count],
+                      &px2[count], &py2[count],
+                      &px3[count], &py3[count]);
             }
 
-            case 2:
+            printf("Object added with index %d.\n", count);
+            count++;
+            render();
+        }
+        else if(choice == 2)
+        {
+            printf("Enter index to delete: ");
+            fflush(stdout);
+            scanf("%d", &idx);
+            if(idx >= 0 && idx < count)
             {
-                int idx;
-                printf("Enter index to delete: ");
-                fflush(stdout);
-                scanf("%d", &idx);
-                if(idx >= 0 && idx < count)
+                for(i = idx; i < count - 1; i++)
                 {
-                    for(int i = idx; i < count - 1; i++)
-                    {
-                        shapeType[i] = shapeType[i+1];
-                        px1[i] = px1[i+1]; py1[i] = py1[i+1];
-                        px2[i] = px2[i+1]; py2[i] = py2[i+1];
-                        px3[i] = px3[i+1]; py3[i] = py3[i+1];
-                    }
-                    count--;
-                    render();
-                    printf("Deleted.\n");
+                    shapeType[i] = shapeType[i+1];
+                    px1[i] = px1[i+1];
+                    py1[i] = py1[i+1];
+                    px2[i] = px2[i+1];
+                    py2[i] = py2[i+1];
+                    px3[i] = px3[i+1];
+                    py3[i] = py3[i+1];
                 }
-                else
-                    printf("Invalid index.\n");
-                break;
-            }
-
-            case 3:
-                printf("Modify not required.\n");
-                break;
-
-            case 4:
+                count--;
                 render();
-                displayCanvas();
-                break;
-
-            case 5:
-                for(int i = 0; i < count; i++)
-                    printf("Index %d Type %d\n", i, shapeType[i]);
-                break;
-
-            case 0:
-                printf("Goodbye.\n");
-                break;
+                printf("Deleted.\n");
+            }
+            else
+            {
+                printf("Invalid index.\n");
+            }
+        }
+        else if(choice == 3)
+        {
+            printf("Modify not required.\n");
+        }
+        else if(choice == 4)
+        {
+            render();
+            displayCanvas();
+        }
+        else if(choice == 5)
+        {
+            for(i = 0; i < count; i++)
+                printf("Index %d Type %d\n", i, shapeType[i]);
+        }
+        else if(choice == 0)
+        {
+            printf("Goodbye.\n");
         }
 
     } while(choice != 0);
 }
 
-// ---------------- MAIN ----------------
 int main()
 {
     createCanvas();
