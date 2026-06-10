@@ -1,0 +1,183 @@
+MINI PROJECT - 2D GRAPHICS EDITOR IN C
+GenAI Prompt Log
+
+Tool Used: Claude (claude.ai)
+
+------------------------------------------------------------
+DAY 1 - Basic Structure and Canvas Setup
+
+PROMPT:
+I want to build a simple 2D graphics editor in C. It should support drawing shapes
+like line, rectangle, triangle, and circle on a canvas using ASCII characters.
+It should have a menu to add, delete, modify, and display shapes.
+
+RESPONSE:
+Suggested using a 2D character array as the canvas:
+    char canvas[ROWS][COLS];
+Recommended separate functions for each shape:
+    createCanvas(), displayCanvas(), drawLine(), drawRectangle(),
+    drawTriangle(), drawCircle()
+Also suggested a menu-driven program with options for add, delete, modify,
+display, and list objects.
+
+------------------------------------------------------------
+PROMPT:
+How do I represent the canvas and initialize it in C?
+
+RESPONSE:
+Suggested defining:
+    #define ROWS 25
+    #define COLS 80
+    char canvas[ROWS][COLS];
+Initialize it with nested loops filling each cell with '_'.
+Display it row by row using printf.
+
+------------------------------------------------------------
+DAY 2 - Drawing Shapes
+
+PROMPT:
+How do I draw a line between two points on a 2D character grid in C?
+
+RESPONSE:
+Explained step-based interpolation:
+    dx = x2 - x1, dy = y2 - y1
+    steps = max(|dx|, |dy|)
+Loop from 0 to steps and calculate intermediate (r, c) positions using:
+    c = x1 + (dx * i) / steps
+    r = y1 + (dy * i) / steps
+Mark each valid position with '*'.
+
+------------------------------------------------------------
+PROMPT:
+How do I draw a rectangle? I want to give top-left and bottom-right coordinates.
+
+RESPONSE:
+Loop over rows r1 to r2 and cols c1 to c2.
+Only mark '*' when r == r1 or r == r2 or c == c1 or c == c2
+(border only, not filled).
+
+------------------------------------------------------------
+PROMPT:
+How to draw a triangle using the line function?
+
+RESPONSE:
+A triangle is just 3 lines connecting 3 points:
+    drawLine(x1,y1, x2,y2);
+    drawLine(x2,y2, x3,y3);
+    drawLine(x3,y3, x1,y1);
+
+------------------------------------------------------------
+PROMPT:
+How do I draw a circle on a 2D character canvas in C?
+
+RESPONSE:
+Use the distance formula. For each cell (r, c):
+    dist = sqrt((r-cy)^2 + (c-cx)^2)
+If dist is close to radius (within a small threshold like 0.6), mark '*'.
+Since characters are taller than wide, scale x-distance by 0.5
+to keep the circle looking round:
+    dx = (c - cx) * 0.5
+
+------------------------------------------------------------
+DAY 3 - Object Storage and Rendering
+
+PROMPT:
+I want to store multiple shapes and redraw all of them after clearing the canvas.
+How do I do this?
+
+RESPONSE:
+Suggested storing all objects in parallel arrays:
+    int shapeType[MAX];
+    int px1[MAX], py1[MAX];
+    int px2[MAX], py2[MAX];
+    int px3[MAX], py3[MAX];
+    int count = 0;
+A render() function clears the canvas then loops through all stored objects
+and redraws each one.
+
+------------------------------------------------------------
+PROMPT:
+How do I delete a specific object by index without clearing all shapes?
+
+RESPONSE:
+Shift all elements from idx+1 onwards one position left:
+    for(i = idx; i < count - 1; i++)
+        copy [i+1] into [i] for all arrays
+Then decrement count and call render() to redraw remaining shapes.
+
+------------------------------------------------------------
+DAY 4 - Fixing Bugs in Output
+
+PROMPT:
+I have written the code. The test cases expect specific output format.
+Here is what the expected output looks like (shared test cases with canvas output).
+My code is not matching. Fix the code.
+
+RESPONSE:
+Identified several issues:
+1. Canvas size was ROWS=25, should be 24
+2. Coordinate convention was wrong - input is x (col) first, y (row) second
+   but code was treating it as row first
+3. Circle was drawn filled (<=) instead of outline (using fabs check)
+4. Rectangle input was taken as x,y,width,height instead of x1,y1,x2,y2
+5. Menu text did not match expected output format
+6. "Object added with index N." message was missing
+7. "Goodbye." message was missing on exit
+Fixed all of the above and provided corrected code.
+
+------------------------------------------------------------
+DAY 5 - Compiler Errors and Final Fix
+
+PROMPT:
+I am getting this error when compiling:
+
+main.c:10:14: error: redefinition of 'y1' as different kind of symbol
+int x1[MAX], y1[MAX];
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/math.h:729:15:
+note: previous definition is here
+extern double y1(double)
+
+RESPONSE:
+On macOS, math.h defines y1() as a Bessel function which conflicts with
+the global array named y1[].
+Fix: rename all coordinate arrays to avoid the clash:
+    y1[] -> py1[]
+    x1[] -> px1[]
+    x2[] -> px2[], y2[] -> py2[]
+    x3[] -> px3[], y3[] -> py3[]
+Also renamed type[] to shapeType[] to avoid any further conflicts.
+
+------------------------------------------------------------
+PROMPT:
+Still getting errors:
+
+main.c:99:1: error: function definition is not allowed here
+main.c:117:1: error: function definition is not allowed here
+main.c:131:1: error: function definition is not allowed here
+main.c:243:1: error: expected '}'
+
+RESPONSE:
+The root cause was using switch-case with variable declarations inside
+case blocks. On older C standards (C89/C90 mode on some compilers),
+this causes brace and scoping issues.
+Fix: replaced the entire switch block with if/else if statements.
+Also moved all variable declarations to the top of each function
+(int t, idx, i declared at start of runMenu) instead of mid-block,
+which is required in C89 mode.
+Provided final complete clean version of the code with all fixes applied.
+Compile command: gcc main.c -o main -lm
+(-lm flag needed to link math library for sqrt and fabs)
+
+------------------------------------------------------------
+
+PROJECT SUMMARY:
+This project implements a 2D graphics editor in C with the following features:
+- ASCII canvas (80x24) rendered using a 2D char array
+- Line drawing using step-based interpolation
+- Rectangle drawing (outline only)
+- Triangle drawing using 3 lines
+- Circle drawing using distance formula with aspect ratio correction
+- Object-based storage system supporting up to 100 shapes
+- Menu-driven interface: add, delete, modify, display, list
+- Full re-render on every change
+- Developed and debugged over 5 days with GenAI assistance
