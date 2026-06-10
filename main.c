@@ -1,10 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define ROWS 25
+#include <math.h>
+
+#define ROWS 24
 #define COLS 80
+#define MAX 100
+
+int shapeType[MAX];
+int px1[MAX], py1[MAX];
+int px2[MAX], py2[MAX];
+int px3[MAX], py3[MAX];
+
+int count = 0;
 
 char canvas[ROWS][COLS];
 
+// ---------------- CANVAS ----------------
 void createCanvas()
 {
     for(int i = 0; i < ROWS; i++)
@@ -21,72 +32,101 @@ void displayCanvas()
         printf("\n");
     }
 }
-void drawRectangle(int r1, int c1, int r2, int c2)
+
+// ---------------- DRAW LINE ----------------
+// x = col, y = row
+void drawLine(int ax1, int ay1, int ax2, int ay2)
 {
-    for(int i = r1; i <= r2; i++)
-    {
-        for(int j = c1; j <= c2; j++)
-        {
-            if(i == r1 || i == r2 || j == c1 || j == c2)
-                canvas[i][j] = '*';
-        }
-    }
-}
-void drawLine(int r1, int c1, int r2, int c2)
-{
-    int dx = c2 - c1;
-    int dy = r2 - r1;
+    int dx = ax2 - ax1;
+    int dy = ay2 - ay1;
 
     int steps = abs(dx);
-
-    if(abs(dy) > steps)
-        steps = abs(dy);
+    if(abs(dy) > steps) steps = abs(dy);
+    if(steps == 0)
+    {
+        if(ay1 >= 0 && ay1 < ROWS && ax1 >= 0 && ax1 < COLS)
+            canvas[ay1][ax1] = '*';
+        return;
+    }
 
     for(int i = 0; i <= steps; i++)
     {
-        int r = r1 + (dy * i) / steps;
-        int c = c1 + (dx * i) / steps;
+        int c = ax1 + (dx * i) / steps;
+        int r = ay1 + (dy * i) / steps;
 
         if(r >= 0 && r < ROWS && c >= 0 && c < COLS)
             canvas[r][c] = '*';
     }
 }
-void drawTriangle(int r1, int c1,
-                  int r2, int c2,
-                  int r3, int c3)
-{
-    drawLine(r1, c1, r2, c2);
-    drawLine(r2, c2, r3, c3);
-    drawLine(r3, c3, r1, c1);
-}
-void drawCircle(int centerRow, int centerCol, int radius)
-{
-    for(int i = 0; i < ROWS; i++)
-    {
-        for(int j = 0; j < COLS; j++)
-        {
-            int d = (i - centerRow) * (i - centerRow)
-                  + (j - centerCol) * (j - centerCol);
 
-            if(d >= radius * radius - radius &&
-               d <= radius * radius + radius)
-            {
-                canvas[i][j] = '*';
-            }
-        }
+// ---------------- DRAW RECTANGLE ----------------
+void drawRectangle(int ax1, int ay1, int ax2, int ay2)
+{
+    for(int r = ay1; r <= ay2; r++)
+        for(int c = ax1; c <= ax2; c++)
+            if(r >= 0 && r < ROWS && c >= 0 && c < COLS)
+                if(r == ay1 || r == ay2 || c == ax1 || c == ax2)
+                    canvas[r][c] = '*';
+}
+
+// ---------------- DRAW TRIANGLE ----------------
+void drawTriangle(int ax1, int ay1, int ax2, int ay2, int ax3, int ay3)
+{
+    drawLine(ax1, ay1, ax2, ay2);
+    drawLine(ax2, ay2, ax3, ay3);
+    drawLine(ax3, ay3, ax1, ay1);
+}
+
+// ---------------- DRAW CIRCLE (OUTLINE) ----------------
+void drawCircle(int cx, int cy, int radius)
+{
+    for(int r = 0; r < ROWS; r++)
+    {
+        for(int c = 0; c < COLS; c++)
+        {
+            double dx = (c - cx) * 0.5;
+            double dy = (r - cy);
+            double dist = sqrt(dx*dx + dy*dy);
+
+            if(fabs(dist - radius) < 0.6)
+                canvas[r][c] = '*';
+
     }
 }
-void menu()
+
+// ---------------- RENDER ----------------
+void render()
 {
-    printf("\n--- 2D Graphics Editor ---\n");
-    printf("1. Display Canvas\n");
-    printf("2. Draw Rectangle\n");
-    printf("3. Draw Line\n");
-    printf("4. Draw Triangle\n");
-    printf("5. Draw Circle\n");
-    printf("0. Exit\n");
+    createCanvas();
+
+    for(int i = 0; i < count; i++)
+    {
+        if(shapeType[i] == 1)
+            drawLine(px1[i], py1[i], px2[i], py2[i]);
+        else if(shapeType[i] == 2)
+            drawRectangle(px1[i], py1[i], px2[i], py2[i]);
+        else if(shapeType[i] == 3)
+            drawCircle(px1[i], py1[i], px2[i]);
+        else if(shapeType[i] == 4)
+            drawTriangle(px1[i], py1[i], px2[i], py2[i], px3[i], py3[i]);
+    }
 }
 
+// ---------------- MENU ----------------
+void menu()
+{
+    printf("\n2D Graphics Editor\n");
+    printf("Canvas size: %d x %d\n", COLS, ROWS);
+    printf("1. Add object\n");
+    printf("2. Delete object\n");
+    printf("3. Modify object\n");
+    printf("4. Display picture\n");
+    printf("5. List objects\n");
+    printf("0. Exit\n");
+    printf("Enter choice: \n");
+}
+
+// ---------------- MAIN LOOP ----------------
 void runMenu()
 {
     int choice;
@@ -94,76 +134,111 @@ void runMenu()
     do
     {
         menu();
-        printf("Enter your choice: ");
+        fflush(stdout);
         scanf("%d", &choice);
 
         switch(choice)
         {
             case 1:
-                displayCanvas();
+            {
+                int t;
+                printf("Choose shape type:\n");
+                printf("1. Line\n");
+                printf("2. Rectangle\n");
+                printf("3. Circle\n");
+                printf("4. Triangle\n");
+                printf("Enter shape type: ");
+                fflush(stdout);
+                scanf("%d", &t);
+
+                shapeType[count] = t;
+
+                if(t == 1)
+                {
+                    printf("Enter x1 y1 x2 y2: ");
+                    fflush(stdout);
+                    scanf("%d %d %d %d",
+                          &px1[count], &py1[count],
+                          &px2[count], &py2[count]);
+                }
+                else if(t == 2)
+                {
+                    printf("Enter top-left x y and bottom-right x y: ");
+                    fflush(stdout);
+                    scanf("%d %d %d %d",
+                          &px1[count], &py1[count],
+                          &px2[count], &py2[count]);
+                }
+                else if(t == 3)
+                {
+                    printf("Enter center x y and radius: ");
+                    fflush(stdout);
+                    scanf("%d %d %d",
+                          &px1[count], &py1[count], &px2[count]);
+                }
+                else if(t == 4)
+                {
+                    printf("Enter x1 y1 x2 y2 x3 y3: ");
+                    fflush(stdout);
+                    scanf("%d %d %d %d %d %d",
+                          &px1[count], &py1[count],
+                          &px2[count], &py2[count],
+                          &px3[count], &py3[count]);
+                }
+
+                printf("Object added with index %d.\n", count);
+                count++;
+                render();
                 break;
+            }
 
             case 2:
             {
-                int x, y, w, h;
-
-                printf("Enter Rectangle (x y width height): ");
-                scanf("%d %d %d %d", &x, &y, &w, &h);
-
-                drawRectangle(x, y, x + h - 1, y + w - 1);
-                printf("Rectangle drawn!\n");
+                int idx;
+                printf("Enter index to delete: ");
+                fflush(stdout);
+                scanf("%d", &idx);
+                if(idx >= 0 && idx < count)
+                {
+                    for(int i = idx; i < count - 1; i++)
+                    {
+                        shapeType[i] = shapeType[i+1];
+                        px1[i] = px1[i+1]; py1[i] = py1[i+1];
+                        px2[i] = px2[i+1]; py2[i] = py2[i+1];
+                        px3[i] = px3[i+1]; py3[i] = py3[i+1];
+                    }
+                    count--;
+                    render();
+                    printf("Deleted.\n");
+                }
+                else
+                    printf("Invalid index.\n");
                 break;
             }
+
             case 3:
-            {
-            int r1, c1, r2, c2;
+                printf("Modify not required.\n");
+                break;
 
-             printf("Line (row1 col1 row2 col2): ");
-             scanf("%d %d %d %d", &r1, &c1, &r2, &c2);
-
-            drawLine(r1, c1, r2, c2);
-
-            printf("Line drawn!\n");
-            break;
-            }
             case 4:
-            {
-             int r1, c1, r2, c2, r3, c3;
+                render();
+                displayCanvas();
+                break;
 
-            printf("Enter row1 col1 row2 col2 row3 col3: ");
-            scanf("%d %d %d %d %d %d",
-            &r1, &c1, &r2, &c2, &r3, &c3);
-
-            drawTriangle(r1, c1, r2, c2, r3, c3);
-
-             printf("Triangle drawn!\n");
-             break;
-             }
-             case 5:
-           {
-            int row, col, radius;
-
-             printf("Enter center row center col radius: ");
-            scanf("%d %d %d", &row, &col, &radius);
-
-            drawCircle(row, col, radius);
-
-            printf("Circle drawn!\n");
-            break;
-           }
+            case 5:
+                for(int i = 0; i < count; i++)
+                    printf("Index %d Type %d\n", i, shapeType[i]);
+                break;
 
             case 0:
-                printf("Exiting program...\n");
+                printf("Goodbye.\n");
                 break;
-
-            default:
-                printf("Invalid choice\n");
         }
 
     } while(choice != 0);
 }
 
-
+// ---------------- MAIN ----------------
 int main()
 {
     createCanvas();
